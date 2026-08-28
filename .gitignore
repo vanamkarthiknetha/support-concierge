@@ -1,0 +1,34 @@
+# secrets
+.env
+.env.local
+*.key
+
+# python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+*.egg-info/
+dist/
+build/
+
+# node / next
+node_modules/
+.next/
+out/
+.vercel/
+*.tsbuildinfo
+
+# data
+*.db
+*.sqlite3
+pgdata/
+
+# os / editor
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
