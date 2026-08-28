@@ -578,13 +578,52 @@ results/                                            ← baseline + chaos runs
 
 ---
 
-## Time spent
+## Time spent, and what is in scope
 
-Roughly **9 hours**, against the brief's stated 4–6 (cap 8). The overrun is deliberate and
-itemised: the backend, tests, evals, and chaos harness — everything the brief actually asks
-for — took ~6 hours. The Next.js console and its API took ~3 more, and the brief lists a
-polished frontend as explicitly out of scope. I built it anyway because the audit trail is the
-part of this most likely to be undersold in a JSON dump, and clicking through TCK-1013's four
-defences firing in sequence makes the argument better than a results file does.
+Roughly **9 hours**, against the brief's stated 4–6 (cap 8). The overrun is deliberate and it
+splits cleanly by directory, not by commit:
 
-If you are timeboxing your read: the backend at commit `f32827f` is the on-brief submission.
+| | Directory | Time | Status |
+|---|---|---|---|
+| **On-brief** | `backend/` (pipeline, agents, policy, store, CLI, API) | ~5h | Requirements 1–6 |
+| | `backend/tests/`, `backend/evals/` | ~1h | Requirement 5 + both bonus items |
+| | `README.md`, `results/` | ~1h | Requirement 7 |
+| **Overage** | `web/` — Next.js review console | ~2h | Explicitly out of scope in the brief |
+
+**If you are timeboxing your read, ignore `web/` entirely.** Everything the brief asks for is
+in `backend/` and `results/`; the CLI (`concierge queue` / `show` / `approve` / `reject`)
+satisfies the human-in-the-loop requirement on its own, and the console is a renderer over the
+same API.
+
+I built the console anyway because the audit trail is the part of this most likely to be
+undersold in a JSON dump — clicking through TCK-1013 and watching three independent policy
+rules fire makes the argument better than a results file does. But it was a choice made with
+the brief's "out of scope" line in front of me, not in spite of it.
+
+**Where the time actually went** — worth saying, because it is the honest answer to "why 9 and
+not 6": roughly 90 minutes went to problems that were not modelling problems at all. The
+free-tier quota on the premium model ran out mid-run and every clean ticket degraded to
+`draft_for_review` for a reason that had nothing to do with the tickets; diagnosing that
+produced the per-model breaker, the 429-is-not-an-outage distinction, and the model-fallback
+path. That is time I would spend again — it is the difference between a demo and something
+that survives a bad afternoon at the provider — but it is not time the brief asked for.
+
+---
+
+## A note on credentials
+
+`.env` is gitignored and **no key has ever entered git history** (verified by scanning every
+blob in every commit, not just the current tree — `bash scripts/check-secrets.sh history`).
+
+Two guards keep it that way:
+
+- **`scripts/check-secrets.sh`** — pattern-scans staged content for Google, Anthropic, OpenAI,
+  GitHub, and AWS key shapes plus private-key headers, and refuses outright if `.env` is
+  staged (a `git add -f` would otherwise bypass `.gitignore`). Install it as a pre-commit hook
+  with `bash scripts/install-hooks.sh`.
+- **CI runs the same script over full history** on every push, so a key committed and later
+  deleted still fails the build — because a deleted key is still a leaked key.
+
+To rotate: `bash scripts/rotate-key.sh <new-key>`. Note that this only updates your local
+`.env` — it cannot revoke anything, so delete the old key at
+<https://aistudio.google.com/apikey> as well.
