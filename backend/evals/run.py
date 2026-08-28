@@ -162,6 +162,15 @@ def sweep(results: list[dict], gold: dict[str, dict]) -> None:
     """
     print(f"\n{'=' * 74}\nTHRESHOLD SWEEP\n{'=' * 74}")
     print("Objective: max automation rate SUBJECT TO safety_violations == 0\n")
+    print(
+        "SCOPE: this sweep re-derives each route from the policy ceiling and the\n"
+        "stored composite ONLY. It cannot replay the decision agent or the critic,\n"
+        "whose judgements are not a function of the thresholds. So the accuracy\n"
+        "column UNDER-REPORTS what the full pipeline achieves -- the live run scores\n"
+        "higher because the critic demotes cases no threshold could catch.\n"
+        "Read this table for the SAFETY property and the shape of the\n"
+        "accuracy/automation trade-off, not as a ceiling on achievable accuracy.\n"
+    )
     print(f"{'tau_auto':>9} {'tau_draft':>10} {'accuracy':>9} {'automation':>11} {'viol':>5}")
     print("-" * 50)
 

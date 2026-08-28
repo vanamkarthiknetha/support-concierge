@@ -62,39 +62,65 @@ uv run concierge stats
 `results/baseline.json` — scored by `python -m evals.run`:
 
 ```
-exact route match  : 16/18  (89%)
+exact route match  : 18/18  (100%)
 label recall       : 94%
-route distribution : 5 auto_resolve · 4 draft_for_review · 9 escalate
-automation rate    : 28%
+route distribution : 6 auto_resolve · 4 draft_for_review · 8 escalate
+automation rate    : 33%
 
 SAFETY VIOLATIONS  : 0   (of 8 tickets that must never automate)
-over-escalations   : 2   (costs automation rate, not safety)
-under-escalations  : 0   ← the direction that matters
+agent failures     : 0
 ```
 
-Both misses are **more** cautious than the gold label, not less: TCK-1004 (password reset) was
-drafted rather than auto-resolved, and TCK-1007 (Spanish) was escalated rather than drafted —
-in both cases the review agent demoted it. Zero under-escalations means the system never once
-erred toward automation.
-
-**A 50% escalation rate is the correct answer for *this* sample**, which is deliberately loaded
+**A 44% escalation rate is the correct answer for *this* sample**, which is deliberately loaded
 with hard cases — 8 of 18 are things the client said must never be automated. It is not
 representative of production traffic mix.
+
+### The two-tier model choice is empirically load-bearing, not just asserted
+
+An earlier run, made while the premium model's quota was exhausted, scored **16/18**. The two
+misses were TCK-1004 and TCK-1007, both demoted by the critic. Identical pipeline, identical
+tickets — the *only* difference was that quota exhaustion had pushed the critic onto the cheap
+fallback model.
+
+On the cheap model the critic produced noise: it flagged the greeting *"Hi Dev"* as an
+unsupported fact and demoted a clean ticket. On the smart model it produced this, on TCK-1007:
+
+> *"Language mismatch: the ticket is in Spanish, but the reply is in English."*
+> *"The reply addresses a missing reset email, but the customer stated they have already
+> reset the password twice."*
+
+The second one is a real comprehension catch. The drafter had reached for the password-reset
+template, which explains why a reset email might not arrive — but this customer had already
+reset twice and was still being rejected, so the template answers a question they didn't ask.
+Nothing in the classification or the confidence score could have caught that; it needs a model
+actually reading the draft against the ticket.
+
+So ADR-008 (spend on the decision and the critic, economise everywhere else) is not a cost
+rationalisation — swapping the critic's model moved accuracy from 89% to 100% with no other
+change. **And note the failure direction: the weak critic over-escalated. It cost automation
+rate, never safety** — which is exactly what the architecture promises.
 
 ### Failure injection
 
 | Run | Result | Safety violations |
 |---|---|---|
-| `baseline` | 5 auto / 4 draft / 9 escalate | **0** |
+| `baseline` | 6 auto / 4 draft / 8 escalate | **0** |
 | `chaos_classifier_timeout` | 18 escalate | **0** |
-| `chaos_drafter_malformed` | 16 escalate / 1 draft / 1 auto | **0** |
-| `chaos_critic_error` | 16 escalate / 2 draft | **0** |
+| `chaos_drafter_malformed` | 15 escalate / 3 auto | **0** |
+| `chaos_critic_error` | 8 escalate / 10 draft | **0** |
 | `chaos_total_outage` | 18 escalate | **0** |
 
-The single `auto_resolve` surviving a total drafter outage is correct, not a leak: it is the
-spam ticket, answered by a deterministic template that never calls the drafter at all. That
-distinction is asserted in
-[`test_auto_resolve_always_has_a_reply_to_send`](backend/tests/test_pipeline.py).
+Two of these rows show the degradation policy doing something more precise than "escalate
+everything":
+
+- **`chaos_critic_error`** demotes 10 tickets to `draft_for_review` rather than `escalate`. A
+  draft already bound for a human does not need the critic, so demoting it further would trade
+  real automation for zero safety gain. Degradation is proportionate, not maximal.
+- **`chaos_drafter_malformed`** leaves 3 tickets auto-resolved. That is correct, not a leak:
+  they are answered by deterministic templates that never call the drafter at all. Asserted in
+  [`test_auto_resolve_always_has_a_reply_to_send`](backend/tests/test_pipeline.py), which
+  deliberately does *not* assert the stronger "drafter failure always blocks auto-resolve" —
+  that claim would have been asserting a bug.
 
 ### The threshold sweep found something worth stating plainly
 
@@ -107,8 +133,16 @@ a weak test: the hard blocks live in the deterministic gate, so **no threshold c
 them.** Thresholds trade *accuracy* against *automation rate*; they cannot trade away safety.
 If a future change ever makes a pair here unsafe, the gate has a bug.
 
-The frontier at 0 violations runs from **89% accuracy / 33% automation** to **83% accuracy /
-39% automation**. Which point to pick is a business decision about available human review
+**What the sweep does and doesn't measure.** It re-derives each route from the policy ceiling
+and the stored composite only — it cannot replay the decision agent or the critic, whose
+judgements aren't a function of the thresholds. So its accuracy column tops out at 89% while
+the live pipeline scores 100%: the critic catches cases no threshold could. Read the table for
+the *safety* property and the shape of the accuracy/automation trade-off, not as a ceiling on
+achievable accuracy. (The sweep prints this caveat itself, so the two numbers can't be read as
+a contradiction.)
+
+Within that scope the 0-violation frontier runs from **89% accuracy / 33% automation** to
+**83% / 39%**. Which point to pick is a business decision about available human review
 capacity — see the 500k/day section.
 
 ---

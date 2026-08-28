@@ -11,7 +11,9 @@ RED=$'\033[31m'; GRN=$'\033[32m'; RST=$'\033[0m'
 # Provider key shapes. Deliberately broad: a false positive costs one --no-verify,
 # a false negative costs a live key in a public repo.
 PATTERNS=(
-  'AIza[0-9A-Za-z_-]{35}'                    # Google / Gemini
+  'AIza[0-9A-Za-z_-]{35}'                    # Google / Gemini (classic AI Studio key)
+  'AQ\.[A-Za-z0-9_-]{20,}'                   # Google newer/upgraded key format
+  'ya29\.[A-Za-z0-9_-]{20,}'                 # Google OAuth access token
   'sk-ant-[0-9A-Za-z_-]{20,}'                # Anthropic
   'sk-[0-9A-Za-z]{32,}'                      # OpenAI
   'gh[pousr]_[0-9A-Za-z]{36,}'               # GitHub
