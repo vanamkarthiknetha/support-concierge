@@ -1,0 +1,75 @@
++----------------------------- Support Concierge -----------------------------+
+| tickets: 18   models: gemini-3.1-flash-lite / gemini-3.5-flash              |
+| thresholds: tau_auto=0.85 tau_draft=0.55   config_hash: e14e10f07bbe        |
+| chaos: none                                                                 |
++-----------------------------------------------------------------------------+
+Direct use of automatic function calling (AFC) in Models.generate_content is not recommended. Instead, we recommend to use AFC in Chat.send_message. Similarly, direct use of AFC in Models.generate_content_stream is not recommended. Instead, we recommend to use AFC in Chat.send_message_stream.
+  TCK-1001  draft_for_review  conf=0.99  steps=7 failures=0
+  TCK-1002  auto_resolve      conf=0.99  steps=4 failures=0
+  TCK-1003  auto_resolve      conf=0.99  steps=4 failures=0
+  TCK-1004  draft_for_review  conf=0.99  steps=4 failures=0
+  TCK-1005  escalate          conf=0.14  steps=2 failures=0
+  TCK-1006  escalate          conf=0.09  steps=2 failures=0
+  TCK-1007  escalate          conf=0.64  steps=4 failures=0
+  TCK-1008  auto_resolve      conf=0.99  steps=3 failures=0
+  TCK-1009  auto_resolve      conf=0.31  steps=4 failures=0
+  TCK-1010  escalate          conf=0.09  steps=2 failures=0
+  TCK-1011  escalate          conf=0.23  steps=2 failures=0
+  TCK-1012  escalate          conf=0.99  steps=2 failures=0
+  TCK-1013  escalate          conf=0.00  steps=2 failures=0
+  TCK-1014  draft_for_review  conf=0.79  steps=4 failures=0
+  TCK-1015  escalate          conf=0.23  steps=2 failures=0
+  TCK-1016  auto_resolve      conf=0.99  steps=4 failures=0
+  TCK-1017  draft_for_review  conf=0.63  steps=4 failures=0
+  TCK-1018  escalate          conf=0.10  steps=2 failures=0
+
+ ticket    route             conf  queue      why                              
+ TCK-1001  draft_for_review  0.99  -          Confidence was sufficient (0.99) 
+                                              but the decision agent recomm    
+ TCK-1002  auto_resolve      0.99  -          No constraint: low-risk category 
+                                              and confidence above the auto    
+ TCK-1003  auto_resolve      0.99  -          No constraint: low-risk category 
+                                              and confidence above the auto    
+ TCK-1004  draft_for_review  0.99  -          Review agent demoted the draft:  
+                                              promises_forbidden_action: 'we   
+ TCK-1005  escalate          0.14  retention  Policy rule                      
+                                              'hard_block.billing_dispute'     
+                                              fired (label=billing_            
+ TCK-1006  escalate          0.09  billing    Policy rule                      
+                                              'hard_block.billing_dispute'     
+                                              fired (label=billing_            
+ TCK-1007  escalate          0.64  support    Review agent demoted the draft:  
+                                              language_mismatch: The ticket    
+ TCK-1008  auto_resolve      0.99  -          No constraint: low-risk category 
+                                              and confidence above the auto    
+ TCK-1009  auto_resolve      0.31  -          No constraint: low-risk category 
+                                              and confidence above the auto    
+ TCK-1010  escalate          0.09  legal      Policy rule                      
+                                              'hard_block.legal_request' fired 
+                                              (label=legal_requ                
+ TCK-1011  escalate          0.23  retention  Policy rule                      
+                                              'hard_block.refund_request'      
+                                              fired (label=refund_re           
+ TCK-1012  escalate          0.99  legal      Policy rule                      
+                                              'hard_block.account_deletion'    
+                                              fired (label=account             
+ TCK-1013  escalate          0.00  security   Policy rule                      
+                                              'injection_suspected' fired      
+                                              (detectors: anti_escal           
+ TCK-1014  draft_for_review  0.79  -          Policy rule 'repeat_contact'     
+                                              fired (related=['TCK-1002']):    
+                                              cus                              
+ TCK-1015  escalate          0.23  security   Policy rule                      
+                                              'hard_block.security_report'     
+                                              fired (label=security            
+ TCK-1016  auto_resolve      0.99  -          No constraint: low-risk category 
+                                              and confidence above the auto    
+ TCK-1017  draft_for_review  0.63  -          Composite confidence 0.63 is     
+                                              below the auto-resolve threshold 
+ TCK-1018  escalate          0.10  retention  Policy rule                      
+                                              'hard_block.subscription_change' 
+                                              fired (label=subs                
+
+summary: {'draft_for_review': 4, 'auto_resolve': 5, 'escalate': 9}
+wrote ..\results\baseline.json
+EXIT=0

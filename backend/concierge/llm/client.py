@@ -136,6 +136,7 @@ class LLMClient:
         self._shared_limiter = rate_limiter
         self._limiters: dict[str, RateLimiter] = {}
         self._breakers: dict[str, CircuitBreaker] = {}
+        self._quota_strikes: dict[str, int] = {}
 
     def _limiter_for(self, model: str) -> RateLimiter:
         if self._shared_limiter is not None:
@@ -151,6 +152,23 @@ class LLMClient:
                 s.breaker_error_rate, s.breaker_window, s.breaker_cooldown_s
             )
         return self._breakers[model]
+
+    # --- quota latch -------------------------------------------------------------
+    # A per-minute rate limit is worth waiting out. An exhausted DAILY quota is not:
+    # retrying it costs 3 attempts x 20s of backoff on every subsequent call and
+    # can never succeed. After N consecutive 429s we latch the model as exhausted
+    # and route straight to the fallback for the rest of the process.
+
+    _QUOTA_LATCH_AFTER = 2
+
+    def _note_rate_limit(self, model: str) -> None:
+        self._quota_strikes[model] = self._quota_strikes.get(model, 0) + 1
+
+    def _note_success(self, model: str) -> None:
+        self._quota_strikes.pop(model, None)
+
+    def quota_exhausted(self, model: str) -> bool:
+        return self._quota_strikes.get(model, 0) >= self._QUOTA_LATCH_AFTER
 
     def call(
         self,
@@ -180,6 +198,18 @@ class LLMClient:
         steps: list[AgentStep] = []
         ph = prompt_hash(system, user)
         started = time.monotonic()
+
+        # Known-exhausted quota: don't spend 60s of backoff proving it again.
+        if self.quota_exhausted(model) and fallback_model and fallback_model != model:
+            out = self.call(
+                agent=agent, model=fallback_model, system=system, user=user,
+                schema=schema, seq=seq, temperature=temperature, fallback_model=None,
+            )
+            if out.ok:
+                out.error_detail = (
+                    f"{model} quota exhausted (latched); served by {fallback_model}"
+                )
+            return out
 
         breaker = self._breaker_for(model)
         limiter = self._limiter_for(model)
@@ -240,6 +270,7 @@ class LLMClient:
                     )
                 )
                 breaker.record(True)
+                self._note_success(model)
                 return AgentOutcome(
                     value=parsed, ok=True, attempts=attempt,
                     latency_ms=int((time.monotonic() - started) * 1000),
@@ -259,7 +290,9 @@ class LLMClient:
                 )
                 # A 429 means "slow down", not "the provider is unhealthy".
                 # Only genuine failures count toward tripping the breaker.
-                if etype is not FailureType.RATE_LIMITED:
+                if etype is FailureType.RATE_LIMITED:
+                    self._note_rate_limit(model)
+                else:
                     breaker.record(False)
 
                 if attempt >= max_attempts or not retryable:
@@ -299,9 +332,27 @@ class LLMClient:
                         f"{detail[:300]}\nReturn ONLY valid JSON matching the schema."
                     )
 
-                backoff = min(2.0**attempt, 8.0) + random.uniform(0, 0.5)
                 if etype is FailureType.RATE_LIMITED:
-                    backoff = max(backoff, 20.0)
+                    # Latched as exhausted mid-loop? Stop retrying and fall back now.
+                    if (
+                        self.quota_exhausted(model)
+                        and fallback_model
+                        and fallback_model != model
+                    ):
+                        fb = self.call(
+                            agent=agent, model=fallback_model, system=system,
+                            user=user, schema=schema, seq=seq,
+                            temperature=temperature, fallback_model=None,
+                        )
+                        fb.steps = steps + fb.steps
+                        if fb.ok:
+                            fb.error_detail = (
+                                f"{model} quota exhausted; served by {fallback_model}"
+                            )
+                        return fb
+                    backoff = 20.0
+                else:
+                    backoff = min(2.0**attempt, 8.0) + random.uniform(0, 0.5)
                 time.sleep(backoff)
 
         return AgentOutcome(

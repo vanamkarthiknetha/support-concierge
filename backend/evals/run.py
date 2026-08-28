@@ -203,13 +203,38 @@ def sweep(results: list[dict], gold: dict[str, dict]) -> None:
             f"{len(rep.safety_violations):>5}{flag}"
         )
 
+    unsafe = [r for r in rows if r[2].safety_violations]
+    print(
+        f"\n{len(safe)}/{len(rows)} threshold pairs produce ZERO safety violations."
+    )
+    if not unsafe:
+        print(
+            "  Every pair in the grid is safe -- including the most permissive.\n"
+            "  This is the design working as intended, not a weak test: the hard blocks\n"
+            "  live in the deterministic policy gate, so no threshold can unlock them.\n"
+            "  Thresholds trade ACCURACY against AUTOMATION RATE; they cannot trade away\n"
+            "  safety. If a future change makes a pair here unsafe, the gate has a bug."
+        )
+
     if safe:
-        best = max(safe, key=lambda x: (x[2].automation_rate, x[2].accuracy, x[0]))
+        # Accuracy first, then automation: a pair that is wrong more often but
+        # automates more is not an improvement, it is a louder mistake.
+        best = max(safe, key=lambda x: (x[2].accuracy, x[2].automation_rate, x[0]))
         print(
             f"\nRECOMMENDED: tau_auto={best[0]} tau_draft={best[1]}  "
             f"-> accuracy {best[2].accuracy:.0%}, automation {best[2].automation_rate:.0%}, "
             "0 violations"
         )
+        # Where the real trade-off is: the most automation any accurate pair achieves.
+        top_auto = max(safe, key=lambda x: (x[2].automation_rate, x[2].accuracy))
+        if top_auto[:2] != best[:2]:
+            print(
+                f"  Most automation available at 0 violations: tau_auto={top_auto[0]} "
+                f"tau_draft={top_auto[1]} -> {top_auto[2].automation_rate:.0%} automation "
+                f"at {top_auto[2].accuracy:.0%} accuracy.\n"
+                "  Which point to pick is a business decision about how much human review\n"
+                "  capacity exists -- see the 500k/day section of the README."
+            )
     print(
         "\nCaveat: 18 self-labelled tickets is a tiny calibration set and will overfit.\n"
         "At scale: a stratified sample of real traffic labelled by the support team,\n"
