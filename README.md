@@ -324,8 +324,8 @@ with thresholds swept per category rather than globally.
 
 ## Key decisions and trade-offs
 
-Full log with rationale in [`.claude/context/decisions.md`](../.claude/context/decisions.md)
-(13 ADRs). The four that matter:
+Full log with rationale in [`docs/DECISIONS.md`](docs/DECISIONS.md) (13 ADRs). The four that
+matter:
 
 **1. Safety in code, not prompts.** A rule expressed in a prompt is a rule a model can be
 argued out of, and TCK-1013 is a live example of someone trying. *Trade-off:* lower automation
