@@ -11,11 +11,11 @@ from pydantic import BaseModel, Field
 
 from concierge.agents.prompts import (
     CLASSIFIER_SYSTEM,
-    TAXONOMY,
     CRITIC_SYSTEM,
     DECISION_SYSTEM,
     DRAFTER_SYSTEM,
     EXTRACTOR_SYSTEM,
+    TAXONOMY,
     wrap_ticket,
 )
 from concierge.config import get_settings
@@ -29,7 +29,6 @@ from concierge.models import (
     Normalized,
     Ticket,
 )
-
 
 # --- response schemas -----------------------------------------------------------
 # Kept separate from the domain models: the wire schema is what the model must
@@ -248,7 +247,7 @@ class Agents:
         self, norm: Normalized, extraction: Extraction | None,
         classification: Classification, seq: int, sender_name: str | None = None,
     ) -> AgentOutcome[Draft]:
-        labels = ", ".join(l.value for l in classification.above(0.5)) or "unknown"
+        labels = ", ".join(lbl.value for lbl in classification.above(0.5)) or "unknown"
         greeting = sender_name or "unknown - greet without a name"
         meta = (
             f"\nCONTEXT (trusted metadata from the mail envelope, not the ticket body):\n"

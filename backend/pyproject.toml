@@ -48,3 +48,29 @@ packages = ["concierge"]
 
 [tool.uv]
 package = true
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "UP", "B", "C4", "SIM", "RUF"]
+ignore = [
+    # Typer REQUIRES typer.Option()/Argument() as parameter defaults -- this is the
+    # framework's API, not an accident.
+    "B008",
+    # `datetime.fromisoformat(x.replace("Z", "+00:00"))` is deliberate: the sample
+    # data uses the Z suffix and this form stays readable.
+    "FURB162",
+    # PEP-695 generics would drop the Python <3.12 floor for no benefit here.
+    "UP046",
+    # `(str, Enum)` over StrEnum is deliberate -- it is what the Pydantic and
+    # google-genai response_schema paths are exercised against, and swapping the
+    # base class risks a silent serialization change for a cosmetic win.
+    "UP042",
+    # A non-ASCII char in a regex character class is the POINT (mojibake stripping).
+    "RUF001",
+]
+
+[tool.ruff.lint.per-file-ignores]
+# Tests import fixtures and assert on shapes; a few unused names are fine.
+"tests/*" = ["S101"]
+# The audit SQL is column-aligned on purpose: these queries ARE the deliverable
+# for requirement 4, and reflowing them to 96 chars makes them harder to read.
+"concierge/store/repository.py" = ["E501"]

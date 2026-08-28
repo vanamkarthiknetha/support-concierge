@@ -31,8 +31,12 @@ _BLANK_LINES = re.compile(r"\n{3,}")
 
 # Leetspeak: only applied inside otherwise-alphabetic words, so we don't damage
 # real tokens like "account_id", "P0", "$12", or "90 days".
-_LEET_MAP = str.maketrans({"0": "o", "1": "l", "3": "e", "4": "a", "5": "s", "@": "a", "$": "s"})
-_LEET_CANDIDATE = re.compile(r"\b(?=[a-z]*[0-9@$])(?=[0-9@$]*[a-z])[a-z0-9@$]{3,}\b", re.IGNORECASE)
+_LEET_MAP = str.maketrans(
+    {"0": "o", "1": "l", "3": "e", "4": "a", "5": "s", "@": "a", "$": "s"}
+)
+_LEET_CANDIDATE = re.compile(
+    r"\b(?=[a-z]*[0-9@$])(?=[0-9@$]*[a-z])[a-z0-9@$]{3,}\b", re.IGNORECASE
+)
 
 # Words we must never "de-leet" -- they're legitimately alphanumeric.
 _LEET_SKIP = frozenset(
@@ -47,7 +51,7 @@ def decode_quoted_printable(text: str) -> tuple[str, bool]:
     try:
         decoded = quopri.decodestring(text.encode("utf-8", "surrogateescape"))
         return decoded.decode("utf-8", "replace"), True
-    except Exception:  # noqa: BLE001 - malformed QP is data, not a crash
+    except Exception:
         return text, False
 
 

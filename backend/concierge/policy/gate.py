@@ -203,7 +203,7 @@ class PolicyGate:
         if len(active) >= 2 and not hard_blocked:
             fire(
                 "multi_intent",
-                f"labels={[l.value for l in active]}",
+                f"labels={[lb.value for lb in active]}",
                 Route.DRAFT_FOR_REVIEW,
                 "multiple distinct intents; a single canned response cannot address both",
             )

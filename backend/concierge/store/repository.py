@@ -7,18 +7,17 @@ monitoring section demands. Both matter -- the store is READ during triage too
 
 from __future__ import annotations
 
-import json
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
-from typing import Any, Iterable
+from typing import Any
 
 import psycopg
 from psycopg.rows import dict_row
 from psycopg.types.json import Jsonb
 
 from concierge.config import get_settings
-from concierge.models import AgentStep, Draft, Ticket, TriageState
+from concierge.models import Ticket, TriageState
 
 SCHEMA_PATH = Path(__file__).parent / "schema.sql"
 
@@ -158,7 +157,7 @@ class Repository:
                     state.graph_version,
                     s.config_hash,
                     state.started_at,
-                    state.ended_at or datetime.now(timezone.utc),
+                    state.ended_at or datetime.now(UTC),
                     terminal_state,
                 ),
             )

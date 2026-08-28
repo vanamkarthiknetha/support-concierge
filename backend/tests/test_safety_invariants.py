@@ -7,7 +7,7 @@ well it scores on routing accuracy.
 from __future__ import annotations
 
 import itertools
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 import pytest
 
@@ -38,7 +38,7 @@ from concierge.policy.routes import (
 def _ticket(tid: str = "TCK-TEST") -> Ticket:
     return Ticket(
         id=tid,
-        received_at=datetime(2026, 8, 3, tzinfo=timezone.utc),
+        received_at=datetime(2026, 8, 3, tzinfo=UTC),
         from_email="x@example.com",
         subject="s",
         body="b",
@@ -50,7 +50,7 @@ def _state(**kw) -> TriageState:
 
 
 def _norm(**kw) -> Normalized:
-    base = dict(subject="s", body="b", language="en", token_estimate=50)
+    base = {"subject": "s", "body": "b", "language": "en", "token_estimate": 50}
     base.update(kw)
     return Normalized(**base)
 
@@ -98,7 +98,7 @@ def test_promotion_raises():
 # --------------------------------------------------------------------------------
 
 
-@pytest.mark.parametrize("label", sorted(HARD_BLOCK_LABELS, key=lambda l: l.value))
+@pytest.mark.parametrize("label", sorted(HARD_BLOCK_LABELS, key=lambda lb: lb.value))
 @pytest.mark.parametrize("score", [round(x * 0.05, 2) for x in range(11, 21)])
 def test_hard_block_labels_never_auto_resolve_at_any_confidence(label, score):
     """The client's requirement, stated exactly: regardless of confidence.
@@ -115,7 +115,7 @@ def test_hard_block_labels_never_auto_resolve_at_any_confidence(label, score):
     assert result.hard_blocked is True
 
 
-@pytest.mark.parametrize("label", sorted(HARD_BLOCK_LABELS, key=lambda l: l.value))
+@pytest.mark.parametrize("label", sorted(HARD_BLOCK_LABELS, key=lambda lb: lb.value))
 def test_hard_block_survives_a_confident_decision_agent(label):
     """Even if the decision agent insists on auto-resolving, the arbiter refuses."""
     gate = PolicyGate()

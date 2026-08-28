@@ -8,9 +8,8 @@ that requirement -- the web console is additive.
 from __future__ import annotations
 
 import json
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
-from typing import Optional
 
 import typer
 from rich.console import Console
@@ -68,12 +67,12 @@ def initdb(reset: bool = typer.Option(False, help="Truncate all tables first")) 
 
 @app.command()
 def run(
-    tickets: Optional[Path] = typer.Option(None, help="Path to tickets JSON"),
-    out: Optional[Path] = typer.Option(None, help="Write results JSON here"),
+    tickets: Path | None = typer.Option(None, help="Path to tickets JSON"),
+    out: Path | None = typer.Option(None, help="Write results JSON here"),
     chaos: list[str] = typer.Option(
         [], "--chaos", help="Inject faults: agent=classifier,mode=timeout,rate=1.0"
     ),
-    limit: Optional[int] = typer.Option(None, help="Only process the first N tickets"),
+    limit: int | None = typer.Option(None, help="Only process the first N tickets"),
     reset: bool = typer.Option(False, help="Wipe the store before running"),
     persist: bool = typer.Option(True, help="Write the audit trail to Postgres"),
 ) -> None:
@@ -142,7 +141,7 @@ def run(
     dest.write_text(
         json.dumps(
             {
-                "generated_at": datetime.now(timezone.utc).isoformat(),
+                "generated_at": datetime.now(UTC).isoformat(),
                 "config_hash": s.config_hash,
                 "models": {"cheap": s.model_cheap, "smart": s.model_smart},
                 "thresholds": {"tau_auto": s.tau_auto, "tau_draft": s.tau_draft},

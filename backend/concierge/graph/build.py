@@ -11,8 +11,9 @@ dropped.
 
 from __future__ import annotations
 
+import contextlib
 import traceback
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from langgraph.graph import END, START, StateGraph
 
@@ -94,10 +95,10 @@ class TriageRunner:
             result = self.graph.invoke(state)
             # LangGraph may return a dict; normalize back to the model.
             state = result if isinstance(result, TriageState) else TriageState(**result)
-        except Exception as exc:  # noqa: BLE001
+        except Exception as exc:
             state = self._dead_letter(state, exc)
         finally:
-            state.ended_at = datetime.now(timezone.utc)
+            state.ended_at = datetime.now(UTC)
             if state.final is None:
                 # Belt and braces: no path may leave a ticket unrouted.
                 state.final = FinalRoute(
@@ -132,11 +133,10 @@ class TriageRunner:
             contributors={"dead_letter": "escalate"},
         )
         if self.repo is not None:
-            try:
+            # Never let audit logging kill the ticket it is trying to record.
+            with contextlib.suppress(Exception):
                 self.repo.dead_letter(
                     state.ticket.id, state.run_id, "graph", exc, tb,
                     {"steps": len(state.steps)},
                 )
-            except Exception:  # noqa: BLE001 - never let logging kill the ticket
-                pass
         return state

@@ -164,5 +164,5 @@ def health() -> dict[str, Any]:
     try:
         repo.counts()
         return {"ok": True, "db": "up"}
-    except Exception as exc:  # noqa: BLE001
+    except Exception as exc:
         raise HTTPException(503, f"db down: {type(exc).__name__}") from exc

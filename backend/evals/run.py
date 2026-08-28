@@ -97,9 +97,9 @@ def score(results: list[dict], gold: dict[str, dict]) -> Report:
         # Label recall: did the classifier find every intent we said was present?
         # This is where multi-intent failures (TCK-1006) show up as a number.
         got = {
-            l["label"]
-            for l in ((r.get("classification") or {}).get("labels") or [])
-            if l["score"] >= 0.5
+            lbl["label"]
+            for lbl in ((r.get("classification") or {}).get("labels") or [])
+            if lbl["score"] >= 0.5
         }
         want = set(g["gold_labels"])
         if want:

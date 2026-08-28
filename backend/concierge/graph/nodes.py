@@ -24,8 +24,6 @@ from concierge.config import get_settings
 from concierge.graph import templates
 from concierge.models import (
     AgentFailure,
-    Classification,
-    ConfidenceBreakdown,
     DecisionProposal,
     Draft,
     Label,
@@ -105,8 +103,8 @@ class Pipeline:
             state.steps.extend(second.steps)
             if second.ok and second.value is not None:
                 c_cross = conf.jaccard(
-                    {l.value for l in out.value.above(0.5)},
-                    {l.value for l in second.value.above(0.5)},
+                    {lbl.value for lbl in out.value.above(0.5)},
+                    {lbl.value for lbl in second.value.above(0.5)},
                 )
             # A failed second opinion is not a failure of the ticket -- the primary
             # classification stands and the composite renormalizes without it.

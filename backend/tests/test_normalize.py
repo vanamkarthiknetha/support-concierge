@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import json
-from datetime import datetime, timezone
+from datetime import datetime
 from pathlib import Path
 
 import pytest
@@ -11,7 +11,7 @@ import pytest
 from concierge.models import Ticket
 from concierge.normalize import injection
 from concierge.normalize.node import normalize
-from concierge.normalize.text import deleet, dedup_hash, normalize_text
+from concierge.normalize.text import dedup_hash, deleet
 
 SAMPLES = json.loads(
     (Path(__file__).resolve().parents[1] / "data" / "sample_tickets.json").read_text(
@@ -134,7 +134,7 @@ def test_clean_tickets_are_not_flagged_as_injection():
     ],
 )
 def test_injection_variants_detected(payload):
-    suspected, spans, score = injection.scan(payload)
+    suspected, _spans, score = injection.scan(payload)
     assert suspected, f"missed: {payload!r} (score={score})"
 
 
@@ -161,7 +161,7 @@ class FakeLookup:
     def __init__(self, related: list[str]):
         self._related = related
 
-    def find_related(self, from_email, dedup_hash):  # noqa: ARG002
+    def find_related(self, from_email, dedup_hash):
         return self._related
 
 

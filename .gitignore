@@ -32,3 +32,6 @@ pgdata/
 Thumbs.db
 .idea/
 .vscode/
+
+# local run logs (results/*.json ARE committed — they're a deliverable)
+results/*.log

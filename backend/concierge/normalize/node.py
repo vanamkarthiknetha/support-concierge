@@ -34,7 +34,7 @@ def detect_language(text: str) -> str:
 
         DetectorFactory.seed = 0  # deterministic; audit trails must be reproducible
         return detect(text)
-    except Exception:  # noqa: BLE001
+    except Exception:
         return "en"
 
 

@@ -65,7 +65,7 @@ class FaultInjector:
         return None
 
     @classmethod
-    def parse(cls, spec_strings: list[str] | None, seed: int | None = 1337) -> "FaultInjector":
+    def parse(cls, spec_strings: list[str] | None, seed: int | None = 1337) -> FaultInjector:
         """Parse `agent=classifier,mode=timeout,rate=1.0` (repeatable)."""
         specs: list[FaultSpec] = []
         for raw in spec_strings or []:

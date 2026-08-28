@@ -17,5 +17,28 @@ services:
       timeout: 3s
       retries: 20
 
+  # The app services are opt-in so `docker compose up -d` stays a fast
+  # "just give me Postgres" for local dev. Bring the whole stack up with:
+  #   docker compose --profile app up -d --build
+  api:
+    profiles: ["app"]
+    build: ./backend
+    depends_on:
+      db: { condition: service_healthy }
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-concierge}:${POSTGRES_PASSWORD:-concierge}@db:5432/${POSTGRES_DB:-concierge}
+      GEMINI_API_KEY: ${GEMINI_API_KEY}
+      MODEL_CHEAP: ${MODEL_CHEAP:-gemini-3.1-flash-lite}
+      MODEL_SMART: ${MODEL_SMART:-gemini-3.5-flash}
+    ports: ["8010:8010"]
+
+  web:
+    profiles: ["app"]
+    build: ./web
+    depends_on: [api]
+    environment:
+      NEXT_PUBLIC_API_URL: http://localhost:8010
+    ports: ["3000:3000"]
+
 volumes:
   pgdata:

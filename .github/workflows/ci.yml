@@ -1,0 +1,73 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+
+jobs:
+  backend:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: concierge
+          POSTGRES_PASSWORD: concierge
+          POSTGRES_DB: concierge
+        ports: ["5434:5432"]
+        options: >-
+          --health-cmd "pg_isready -U concierge -d concierge"
+          --health-interval 3s --health-timeout 3s --health-retries 20
+
+    env:
+      DATABASE_URL: postgresql://concierge:concierge@localhost:5434/concierge
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+      - run: uv sync --frozen
+
+      - name: Lint
+        run: uv run ruff check concierge evals tests
+
+      # 162 tests, no API key required: the LLM is stubbed and every safety
+      # invariant is deterministic. This is deliberate — a safety gate you can
+      # only run with credentials is a safety gate that stops getting run.
+      - name: Tests
+        run: uv run pytest -q
+
+      # THE SAFETY GATE. Scores the committed baseline against the gold set and
+      # exits non-zero if any ticket that must never be automated was
+      # auto-resolved. A regression here fails the build, by design.
+      - name: Safety gate (eval harness)
+        run: uv run python -m evals.run --results ../results/baseline.json
+
+      - name: Safety gate (chaos runs)
+        run: |
+          for f in ../results/chaos_*.json; do
+            echo "--- $f"
+            uv run python -m evals.run --results "$f"
+          done
+
+  web:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: web
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - run: npm ci
+      - run: npx tsc --noEmit
+      - run: npm run build

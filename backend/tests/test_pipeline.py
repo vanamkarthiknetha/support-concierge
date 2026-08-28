@@ -10,7 +10,7 @@ Two jobs:
 from __future__ import annotations
 
 import json
-from datetime import datetime, timezone
+from datetime import datetime
 from pathlib import Path
 
 import pytest
@@ -21,10 +21,7 @@ from concierge.llm.client import AgentOutcome, LLMClient, RateLimiter
 from concierge.llm.faults import FaultInjector, FaultSpec
 from concierge.models import (
     AgentStep,
-    Classification,
     FailureType,
-    Label,
-    ScoredLabel,
     Ticket,
 )
 from concierge.policy.routes import Route
@@ -178,7 +175,6 @@ def _ticket_id_from(user: str) -> str | None:
 
 def _stub_payload(agent: str, user: str) -> dict:
     """Responses shaped like a correct model's, keyed off the sample tickets."""
-    low = user.lower()
     tid = _ticket_id_from(user)
 
     if agent == "extractor":
@@ -193,7 +189,7 @@ def _stub_payload(agent: str, user: str) -> dict:
     if agent == "classifier":
         pairs = STUB_LABELS.get(tid or "") or [("bug_report", 0.9)]
         return {
-            "labels": [{"label": l, "score": s} for l, s in pairs],
+            "labels": [{"label": lbl, "score": sc} for lbl, sc in pairs],
             "reasoning": "stub",
         }
     if agent == "decision":

@@ -14,7 +14,7 @@ from __future__ import annotations
 
 from concierge.models import Label, RequestedAction
 
-TAXONOMY = ", ".join(l.value for l in Label)
+TAXONOMY = ", ".join(lb.value for lb in Label)
 ACTIONS = ", ".join(a.value for a in RequestedAction)
 
 # Prepended to every agent's system prompt.

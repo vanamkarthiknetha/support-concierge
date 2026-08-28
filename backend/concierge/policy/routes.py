@@ -13,9 +13,9 @@ trusting five LLM prompts to behave. See ADR-002.
 
 from __future__ import annotations
 
+from collections.abc import Iterable
 from enum import Enum
 from functools import total_ordering
-from typing import Iterable
 
 
 @total_ordering

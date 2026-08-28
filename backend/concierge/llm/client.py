@@ -24,8 +24,8 @@ from google.genai import errors as genai_errors
 from pydantic import BaseModel, ValidationError
 
 from concierge.config import get_settings
-from concierge.models import AgentStep, FailureType
 from concierge.llm.faults import FaultInjector, InjectedFault
+from concierge.models import AgentStep, FailureType
 
 T = TypeVar("T", bound=BaseModel)
 
@@ -277,7 +277,7 @@ class LLMClient:
                     steps=steps, raw=raw,
                 )
 
-            except Exception as exc:  # noqa: BLE001 - classified below, never propagated
+            except Exception as exc:
                 etype, detail, retryable = _classify(exc)
                 steps.append(
                     AgentStep(
