@@ -1,5 +1,8 @@
 # Support Concierge — multi-agent ticket triage
 
+[![CI](https://github.com/vanamkarthiknetha/support-concierge/actions/workflows/ci.yml/badge.svg)](https://github.com/vanamkarthiknetha/support-concierge/actions/workflows/ci.yml)
+&nbsp;`18/18 routing accuracy` &nbsp;`0 safety violations` &nbsp;`162 tests`
+
 Ingests a support ticket, classifies it, extracts structured fields, decides whether to
 **auto-resolve / draft for review / escalate**, and records a decision trail you can query
 afterwards to reconstruct exactly what happened and why.
