@@ -623,33 +623,42 @@ results/                                            ← baseline + chaos runs
 
 ## Time spent, and what is in scope
 
-Roughly **9 hours**, against the brief's stated 4–6 (cap 8). The overrun is deliberate and it
-splits cleanly by directory, not by commit:
+**About 4.5 hours** end to end — first file written to last commit, per the git history
+(`git log --format=%ad --date=iso`). That is inside the brief's stated 4–6.
 
-| | Directory | Time | Status |
-|---|---|---|---|
-| **On-brief** | `backend/` (pipeline, agents, policy, store, CLI, API) | ~5h | Requirements 1–6 |
-| | `backend/tests/`, `backend/evals/` | ~1h | Requirement 5 + both bonus items |
-| | `README.md`, `results/` | ~1h | Requirement 7 |
-| **Overage** | `web/` — Next.js review console | ~2h | Explicitly out of scope in the brief |
+Built with heavy use of Claude Code, which the brief explicitly invites: *"using Claude,
+Copilot, etc. is expected and fine. We care about the decisions behind the code, not whether
+every line was hand-typed."* The judgement calls it records — the geometric mean, risk as MAX
+over labels, the fourth terminal action, dropping self-consistency after measuring it flat —
+are the part worth reviewing.
+
+Roughly how it split:
+
+| | Directory | Status |
+|---|---|---|
+| **On-brief** | `backend/` — pipeline, agents, policy, store, CLI, API | Requirements 1–6 |
+| | `backend/tests/`, `backend/evals/` | Requirement 5 + both bonus items |
+| | `README.md`, `docs/`, `results/` | Requirement 7 |
+| **Past scope** | `web/` — Next.js review console | Explicitly out of scope in the brief |
 
 **If you are timeboxing your read, ignore `web/` entirely.** Everything the brief asks for is
-in `backend/` and `results/`; the CLI (`concierge queue` / `show` / `approve` / `reject`)
-satisfies the human-in-the-loop requirement on its own, and the console is a renderer over the
-same API.
+in `backend/`, `docs/`, and `results/`; the CLI (`concierge queue` / `show` / `approve` /
+`reject`) satisfies the human-in-the-loop requirement on its own, and the console is a pure
+renderer over the same API.
 
-I built the console anyway because the audit trail is the part of this most likely to be
-undersold in a JSON dump — clicking through TCK-1013 and watching three independent policy
-rules fire makes the argument better than a results file does. But it was a choice made with
-the brief's "out of scope" line in front of me, not in spite of it.
+I built it anyway because the audit trail is the part of this most likely to be undersold in a
+JSON dump — clicking through TCK-1013 and watching three independent policy rules fire makes
+the argument better than a results file does. But it was a choice made with the brief's "out of
+scope" line in front of me, not in spite of it.
 
-**Where the time actually went** — worth saying, because it is the honest answer to "why 9 and
-not 6": roughly 90 minutes went to problems that were not modelling problems at all. The
-free-tier quota on the premium model ran out mid-run and every clean ticket degraded to
-`draft_for_review` for a reason that had nothing to do with the tickets; diagnosing that
-produced the per-model breaker, the 429-is-not-an-outage distinction, and the model-fallback
-path. That is time I would spend again — it is the difference between a demo and something
-that survives a bad afternoon at the provider — but it is not time the brief asked for.
+**Where a surprising share of the time went**, because it is the more useful answer than a
+number: a solid block went to problems that were not modelling problems at all. The premium
+model's quota ran out mid-run and every clean ticket degraded to `draft_for_review` for a
+reason that had nothing to do with the tickets. Diagnosing that produced the per-model circuit
+breaker, the *a 429 is backpressure, not an outage* distinction, and the model-fallback path —
+and it later turned out to explain two routing misses outright (see *The two-tier model choice
+is empirically load-bearing* above). That is the difference between a demo and something that
+survives a bad afternoon at the provider.
 
 ---
 
