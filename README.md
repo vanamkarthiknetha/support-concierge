@@ -45,6 +45,15 @@ uv run uvicorn concierge.api.main:app --port 8010    # review API + /docs
 cd ../web && npm install && npm run dev               # console on :3000
 ```
 
+The test suite and the eval gate both run **without an API key** — the LLM is stubbed and every
+safety invariant is deterministic. A safety gate you can only run with credentials is a safety
+gate that stops getting run.
+
+> **Windows:** extract to a short path (`C:\dev\...`, not a deep temp directory). Some
+> transitive dependencies ship filenames long enough to cross the 260-character `MAX_PATH`
+> limit, and the failure mode is a confusing `ModuleNotFoundError` for a file that is visibly
+> present on disk. Either use a short path or enable long-path support.
+
 CLI review surface:
 
 ```bash
