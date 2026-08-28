@@ -119,9 +119,28 @@ def _binding_constraint(
         issues = "; ".join(state.critique.issues) or state.critique.rationale
         return f"Review agent demoted the draft: {issues}"
 
-    if state.confidence and state.confidence.composite < 1.0:
-        dom = state.confidence.dominant_penalty
-        base = f"Composite confidence {state.confidence.composite:.2f} below threshold"
-        return f"{base} (dominant penalty: {dom})." if dom else base + "."
+    # Only blame confidence when confidence is actually what bound the route.
+    from concierge.config import get_settings
+
+    s = get_settings()
+    conf = state.confidence
+    if conf is not None:
+        below_auto = conf.composite < s.tau_auto
+        if below_auto:
+            dom = conf.dominant_penalty
+            base = (
+                f"Composite confidence {conf.composite:.2f} is below the "
+                f"auto-resolve threshold ({s.tau_auto})"
+            )
+            return f"{base}; dominant penalty: {dom}." if dom else base + "."
+
+    if state.decision is not None and state.decision.route == route:
+        rationale = state.decision.rationale.strip()
+        return (
+            f"Confidence was sufficient ({conf.composite:.2f}) but the decision agent "
+            f"recommended {route.value}: {rationale}"
+            if conf
+            else f"Decision agent recommended {route.value}: {rationale}"
+        )
 
     return f"Routed to {route.value} by: {', '.join(contributors) or 'default (fail-closed)'}."
